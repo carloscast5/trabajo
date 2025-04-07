@@ -1,0 +1,32 @@
+---
+- name: Crear la máquina virtual sin disco
+  command: >
+    qm create {{ vm.vmid }}
+    --name {{ vm.name }}
+    --memory {{ vm.memory }}
+    --cores {{ vm.cores }}
+    --net0 virtio,bridge=vmbr0
+    --ide2 {{ vm.storage }}:cloudinit
+    --boot c
+    --bootdisk scsi0
+
+- name: Verificar la existencia de la imagen
+  stat:
+    path: "{{ vm.cloud_image }}"
+  register: image_stat
+
+- name: Fallar si la imagen no existe
+  fail:
+    msg: "La imagen {{ vm.cloud_image }} no existe en el servidor."
+  when: not image_stat.stat.exists
+
+- name: Importar el disco de cloud-init
+  command: >
+    qm importdisk {{ vm.vmid }} {{ vm.cloud_image }} {{ vm.storage }}
+
+- name: Adjuntar el disco importado a la VM
+  command: >
+    qm set {{ vm.vmid }}
+    --scsihw virtio-scsi-pci
+    --scsi0 {{ vm.storage }}:vm-{{ vm.vmid }}-disk-0
+
