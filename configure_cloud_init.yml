@@ -1,0 +1,75 @@
+---
+- name: Crear el directorio de snippets si no existe
+  file:
+    path: /var/lib/vz/snippets
+    state: directory
+    mode: '0755'
+
+- name: Eliminar archivos de configuración anteriores en snippets
+  file:
+    path: /var/lib/vz/snippets/user_data_{{ vm.vmid }}
+    state: absent
+
+- name: Crear el archivo user-data
+  copy:
+    content: |
+      #cloud-config
+      users:
+        - name: {{ vm.user }}
+          hashed_passwd: "{{ encrypted_password.stdout }}"
+          groups: sudo
+          shell: /bin/bash
+          lock_passwd: false
+          ssh_pwauth: True
+
+      sudo: ALL=(ALL) NOPASSWD:ALL
+      ssh_pwauth: True
+      keyboard:
+        layout: es
+        variant: ''
+      network:
+        version: 2
+        ethernets:
+          ens18:
+            dhcp4: no
+            addresses:
+              - {{ vm.static_ip }}/24
+            gateway4: {{ vm.gateway }}
+            nameservers:
+              addresses: [{{ vm.dns_servers.replace(' ', ', ') }}]
+      runcmd:
+        - [ cloud-init-per, instance, setup, sh, -c, \"echo 'user-data script executed' > /tmp/user_data_executed\" ]
+        - [ cloud-init-per, instance, script, /tmp/configure_snort.sh ]
+    dest: /var/lib/vz/snippets/user_data_{{ vm.vmid }}
+  register: user_data_creation
+
+- name: Verificar la creación del archivo user-data
+  stat:
+    path: /var/lib/vz/snippets/user_data_{{ vm.vmid }}
+  register: user_data_stat
+
+- name: Mostrar el estado de la creación del archivo user-data
+  debug:
+    var: user_data_stat
+
+- name: Mostrar el contenido del archivo user-data
+  command: cat /var/lib/vz/snippets/user_data_{{ vm.vmid }}
+  register: user_data_content
+
+- name: Mostrar el contenido del archivo user-data en debug
+  debug:
+    var: user_data_content.stdout
+
+- name: Configurar Cloud-Init
+  command: >
+    qm set {{ vm.vmid }}
+    --cicustom user=local:snippets/user_data_{{ vm.vmid }}
+
+- name: Deshabilitar la virtualización KVM en la configuración de la VM
+  command: >
+    qm set {{ vm.vmid }} --kvm 0
+
+- name: Iniciar la máquina virtual
+  command: >
+    qm start {{ vm.vmid }}
+
