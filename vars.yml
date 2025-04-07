@@ -1,0 +1,21 @@
+---
+proxmox_api_host: "{{ ansible_host }}"
+proxmox_api_user: "root@pam"
+proxmox_api_password: "carlos"
+proxmox_node: "pve"  
+vm:
+  name: "snort"
+  vmid: 105
+  memory: 4096          
+  cores: 2                
+  disk_size: "20G"
+  volume_group: "pve"
+  thin_pool: "data"
+  cloud_image: "/var/lib/vz/template/iso/jammy-server-cloudimg-amd64.img"
+  user: "carlos"
+  password: "carlos"
+  storage: "local-lvm"
+  static_ip: "192.168.100.10"
+  gateway: "192.168.100.3"
+  dns_servers: "8.8.8.8 8.8.4.4"
+
