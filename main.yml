@@ -1,0 +1,14 @@
+---
+- name: Desplegar la máquina virtual snort en Proxmox
+  hosts: proxmox
+  gather_facts: yes
+  become: true
+  vars_files:
+    - vars.yml
+  tasks:
+    - include_tasks: tasks/install_dependencies.yml
+    - include_tasks: tasks/create_vm.yml
+    - include_tasks: tasks/configure_cloud_init.yml
+    - include_tasks: tasks/setup_network.yml
+    - include_tasks: tasks/deploy_snort.yml
+
