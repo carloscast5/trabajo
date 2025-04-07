@@ -1,0 +1,27 @@
+---
+- name: Verificar la puerta de enlace predeterminada
+  shell: ip route show default
+  register: gateway_result
+
+- name: Mostrar puerta de enlace predeterminada
+  debug:
+    var: gateway_result
+
+- name: Probar conectividad a la puerta de enlace predeterminada
+  shell: ping -c 4 $(ip route show default | awk '/default/ {print $3}')
+  register: gateway_ping_result
+  ignore_errors: yes
+
+- name: Mostrar resultado del ping a la puerta de enlace
+  debug:
+    var: gateway_ping_result
+
+- name: Probar conectividad a Internet
+  shell: ping -c 4 8.8.8.8
+  register: internet_ping_result
+  ignore_errors: yes
+
+- name: Mostrar resultado del ping a 8.8.8.8
+  debug:
+    var: internet_ping_result
+
