@@ -1,0 +1,30 @@
+
+---
+- name: Instalar pip y librerías necesarias en Proxmox
+  apt:
+    name:
+      - python3-pip
+      - python3-setuptools
+      - qemu-guest-agent
+    state: present
+
+- name: Instalar la librería proxmoxer (si es necesario) en Proxmox
+  pip:
+    name: proxmoxer
+    state: present
+
+- name: Instalar la librería passlib (si es necesario) en Proxmox
+  pip:
+    name: passlib
+    state: present
+
+- name: Instalar whois en localhost para mkpasswd
+  delegate_to: localhost
+  apt:
+    name: whois
+    state: present
+
+- name: Generar contraseña encriptada para el usuario en localhost
+  delegate_to: localhost
+  command: mkpasswd --method=SHA-512 --rounds=4096 {{ vm.password }}
+  register: encrypted_password
